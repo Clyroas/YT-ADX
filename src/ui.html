@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YT-ADX</title>
+<style>
+  :root { color-scheme: dark; --bg: #0c0d10; --surface: #14161c; --surface-hover: #1a1d25; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.14); --text: #f3f4f6; --muted: #8b90a0; --accent: #ff2d55; --accent-soft: rgba(255,45,85,0.14); --green: #22c55e; --green-soft: rgba(34,197,94,0.14); --gold: #ffd666; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 13px/1.45 "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  body { width: 348px; padding: 14px; display: flex; flex-direction: column; gap: 12px; background-image: radial-gradient(circle at 15% 0%, rgba(255,45,85,0.15), transparent 52%), radial-gradient(circle at 90% 10%, rgba(255,214,102,0.07), transparent 45%); }
+  @media (min-width: 460px) { body { width: 100%; max-width: 420px; margin: 36px auto; border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.55); } }
+  .header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .logo { width: 34px; height: 34px; border-radius: 9px; box-shadow: 0 6px 16px rgba(255,45,85,0.28); flex: none; }
+  .brand-text h1 { margin: 0; font-size: 14.5px; font-weight: 650; letter-spacing: -0.01em; }
+  .brand-text p { margin: 1px 0 0; font-size: 11px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; background: var(--green-soft); color: var(--green); border: 1px solid rgba(34,197,94,0.25); transition: all 0.2s ease; }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+  body.paused .pill { background: var(--accent-soft); color: var(--accent); border-color: rgba(255,45,85,0.25); }
+  body.paused .pill .dot { box-shadow: none; }
+  .hero { background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015)); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .stat-value { font-size: 28px; font-weight: 750; line-height: 1.1; letter-spacing: -0.03em; background: linear-gradient(90deg, #ffffff, #d8dce8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .stat-label { margin-top: 3px; font-size: 11.5px; color: var(--muted); }
+  .btn-reset { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 6px 11px; font: inherit; font-size: 11.5px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; }
+  .btn-reset:hover { color: var(--text); background: rgba(255,255,255,0.09); border-color: var(--border-strong); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; border-top: 1px solid var(--border); transition: background 0.15s ease, opacity 0.2s ease; }
+  .row:first-child { border-top: 0; }
+  .row:hover { background: var(--surface-hover); }
+  .row.master { background: rgba(255,45,85,0.06); }
+  body.paused .sub-controls .row { opacity: 0.45; }
+  .row-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .badge { width: 26px; height: 26px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #d1d5db; flex: none; }
+  .row.master .badge { background: var(--accent-soft); border-color: rgba(255,45,85,0.3); color: var(--accent); }
+  .row-text b { display: block; font-size: 12.8px; font-weight: 600; color: var(--text); }
+  .row-text small { display: block; font-size: 11px; color: var(--muted); }
+  .switch { position: relative; width: 38px; height: 21px; flex: none; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 2; }
+  .track { position: absolute; inset: 0; border-radius: 999px; background: #262934; border: 1px solid rgba(255,255,255,0.08); transition: background 0.18s ease; }
+  .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #9ca3af; transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), background 0.18s ease; }
+  .switch input:checked + .track { background: var(--green); }
+  .row.master .switch input:checked + .track { background: var(--accent); }
+  .switch input:checked + .track::after { transform: translateX(17px); background: #fff; }
+  .footer { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 0; font-size: 11px; color: var(--muted); }
+  .footer .ok { color: var(--green); font-weight: 500; }
+  .footer .off { color: var(--accent); font-weight: 500; }
+</style>
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <img class="logo" src="../icons/icon48.png" alt="">
+      <div class="brand-text"><h1>YT-ADX</h1><p>4-layer ad shield</p></div>
+    </div>
+    <div class="pill"><span class="dot"></span><span id="status-text">Active</span></div>
+  </header>
+  <section class="hero">
+    <div><div class="stat-value" id="blocked">0</div><div class="stat-label">Ad breaks cleaned</div></div>
+    <button class="btn-reset" id="reset" type="button">Reset counter</button>
+  </section>
+  <div class="card">
+    <div class="row master">
+      <div class="row-info"><span class="badge">ON</span><div class="row-text"><b>Protection enabled</b><small>Network rules, JSON strip &amp; player guard</small></div></div>
+      <label class="switch"><input type="checkbox" data-key="enabled" id="enabled"><span class="track"></span></label>
+    </div>
+  </div>
+  <div class="card sub-controls">
+    <div class="row">
+      <div class="row-info"><span class="badge">&gt;&gt;</span><div class="row-text"><b>Auto-skip breaks</b><small>Clicks skip &amp; advances unskippable ads</small></div></div>
+      <label class="switch"><input type="checkbox" data-key="skip"><span class="track"></span></label>
+    </div>
+    <div class="row">
+      <div class="row-info"><span class="badge">M</span><div class="row-text"><b>Silence ad audio</b><small>Mutes during breaks, restores after</small></div></div>
+      <label class="switch"><input type="checkbox" data-key="mute"><span class="track"></span></label>
+    </div>
+    <div class="row">
+      <div class="row-info"><span class="badge">UI</span><div class="row-text"><b>Hide page ad slots</b><small>Masthead, feed promos &amp; overlays</small></div></div>
+      <label class="switch"><input type="checkbox" data-key="hide"><span class="track"></span></label>
+    </div>
+    <div class="row">
+      <div class="row-info"><span class="badge">#</span><div class="row-text"><b>Count cleaned breaks</b><small>Shows badge &amp; session counter</small></div></div>
+      <label class="switch"><input type="checkbox" data-key="count"><span class="track"></span></label>
+    </div>
+  </div>
+  <footer class="footer"><span id="rules">Checking rulesÃ¢â‚¬Â¦</span><span id="version"></span><span>© 2026 YT-ADX</span></footer>
+<script src="ui.js"></script>
+</body>
+</html>

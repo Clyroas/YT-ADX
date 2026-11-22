@@ -1,0 +1,5 @@
+﻿_metadata/
+test/server.log
+test/last-run.txt
+.DS_Store
+Thumbs.db

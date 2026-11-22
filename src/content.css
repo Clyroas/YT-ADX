@@ -1,0 +1,44 @@
+/* Ad surfaces the page still draws even when its data has no ads in it.
+   Kept narrow: each selector names a renderer that only ever carries advertising.
+   Gated on the hide setting, so turning it off restores the page exactly as YouTube wrote it. */
+
+html[data-ytadclean-hide="1"] #masthead-ad,
+html[data-ytadclean-hide="1"] #player-ads,
+html[data-ytadclean-hide="1"] ytd-ad-slot-renderer,
+html[data-ytadclean-hide="1"] ytd-display-ad-renderer,
+html[data-ytadclean-hide="1"] ytd-promoted-sparkles-web-renderer,
+html[data-ytadclean-hide="1"] ytd-promoted-sparkles-text-search-renderer,
+html[data-ytadclean-hide="1"] ytd-promoted-video-renderer,
+html[data-ytadclean-hide="1"] ytd-compact-promoted-video-renderer,
+html[data-ytadclean-hide="1"] ytd-in-feed-ad-layout-renderer,
+html[data-ytadclean-hide="1"] ytd-banner-promo-renderer,
+html[data-ytadclean-hide="1"] ytd-video-masthead-ad-v3-renderer,
+html[data-ytadclean-hide="1"] ytd-video-masthead-ad-v2-renderer,
+html[data-ytadclean-hide="1"] ytd-statement-banner-renderer,
+html[data-ytadclean-hide="1"] ytd-primetime-promo-renderer,
+html[data-ytadclean-hide="1"] ytd-brand-video-shelf-renderer,
+html[data-ytadclean-hide="1"] ytd-brand-video-singleton-renderer,
+html[data-ytadclean-hide="1"] ytd-search-pyv-renderer,
+html[data-ytadclean-hide="1"] ytd-ad-federated-comment-renderer,
+html[data-ytadclean-hide="1"] ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"],
+html[data-ytadclean-hide="1"] ytm-promoted-sparkles-web-renderer,
+html[data-ytadclean-hide="1"] ytm-companion-slot {
+  display: none !important;
+}
+
+/* The "ad blockers violate the terms" modal. Hidden rather than removed so the dialog stack the
+   page keeps does not end up pointing at a node that is gone. */
+html[data-ytadclean-hide="1"] ytd-enforcement-message-view-model,
+html[data-ytadclean-hide="1"] ytd-enforcement-message-view-model + tp-yt-iron-overlay-backdrop {
+  display: none !important;
+}
+
+/* While a break is showing, hide its chrome so a skipped ad never flashes a control. */
+html[data-ytadclean-skip="1"] .ytp-ad-player-overlay,
+html[data-ytadclean-skip="1"] .ytp-ad-overlay-container,
+html[data-ytadclean-skip="1"] .ytp-ad-text-overlay,
+html[data-ytadclean-skip="1"] .ytp-ad-player-overlay-layout,
+html[data-ytadclean-skip="1"] .ytp-ad-player-overlay-instream-info,
+html[data-ytadclean-skip="1"] .ytp-ad-skip-button-slot {
+  display: none !important;
+}
