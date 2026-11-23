@@ -1,7 +1,7 @@
 {
     "manifest_version":  3,
     "name":  "YT-ADX",
-    "version":  "1.0.0",
+    "version":  "1.0.2",
     "description":  "Blocks YouTube\u0027s ad endpoints, strips ad breaks out of the player response, and clears ad surfaces from the page.",
     "minimum_chrome_version":  "111",
     "permissions":  [
