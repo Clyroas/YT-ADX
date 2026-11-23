@@ -29,7 +29,8 @@ html[data-ytadclean-hide="1"] ytm-companion-slot {
 /* The "ad blockers violate the terms" modal. Hidden rather than removed so the dialog stack the
    page keeps does not end up pointing at a node that is gone. */
 html[data-ytadclean-hide="1"] ytd-enforcement-message-view-model,
-html[data-ytadclean-hide="1"] ytd-enforcement-message-view-model + tp-yt-iron-overlay-backdrop {
+html[data-ytadclean-hide="1"] ytd-enforcement-message-view-model + tp-yt-iron-overlay-backdrop,
+html[data-ytadclean-hide="1"]:has(ytd-enforcement-message-view-model) tp-yt-iron-overlay-backdrop {
   display: none !important;
 }
 

@@ -18,7 +18,7 @@ test('manifest.json is valid MV3 with icons and clean host_permissions', () => {
 });
 test('rules/ads.json excludes main_frame and allows playback telemetry', () => {
   const rules = JSON.parse(fs.readFileSync(path.join(ROOT, 'rules/ads.json'), 'utf8'));
-  assert.equal(rules.length, 7);
+  assert.equal(rules.length, 5);
   for (const r of rules) {
     assert.ok(r.condition.excludedResourceTypes?.includes('main_frame'), `rule ${r.id} excludes main_frame`);
     const f = r.condition.urlFilter || '';
@@ -65,6 +65,12 @@ test('inject.js strips ads, preserves clarificationRenderer, counts breaks, and 
   store.set('ytadclean_enabled', '0');
   sandbox.window.ytInitialPlayerResponse = JSON.parse(JSON.stringify(sample));
   assert.ok(Array.isArray(sandbox.window.ytInitialPlayerResponse.adPlacements), 'bypasses when disabled');
+});
+test('player checks are throttled and do not seek the video timeline', () => {
+  const source = fs.readFileSync(path.join(ROOT, 'src/content.js'), 'utf8');
+  assert.match(source, /const TICK_MS = 750/);
+  assert.match(source, /observerTimer !== null/);
+  assert.doesNotMatch(source, /nudgeToEnd|video\\.currentTime\\s*=/);
 });
 test('all JS files parse cleanly and UI IDs match ui.js', () => {
   for (const rel of ['src/background.js', 'src/content.js', 'src/inject.js', 'src/ui.js']) {

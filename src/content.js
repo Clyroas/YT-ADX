@@ -7,7 +7,7 @@
 
   const SKIP_ATTR = 'data-ytadclean-skip';
   const HIDE_ATTR = 'data-ytadclean-hide';
-  const TICK_MS = 300;
+  const TICK_MS = 750;
   // A break that refuses to be skipped is left muted and playing rather than paused: a paused ad
   // stops the timeline the page uses to decide the break is over.
   const MUTE_MAX_MS = 120000;
@@ -21,8 +21,10 @@
   let settings = { ...DEFAULTS };
   let observer = null;
   let timer = null;
+  let observerTimer = null;
   let mutedByUs = false;
   let savedMute = false;
+  let wasPausedBeforeAd = false;
   let muteStartedAt = 0;
   let lastSkipAt = 0;
   let lastReportAt = 0;
@@ -36,6 +38,13 @@
     if (!el) return false;
     if (el.classList.contains('ad-showing')) return true;
     if (el.classList.contains('ad-interrupting')) return true;
+    if (el.classList.contains('ad-overlay')) return true;
+    if (el.querySelector('.ytp-ad-player-overlay')) return true;
+    if (el.querySelector('.ytp-ad-overlay-container')) return true;
+    try {
+      const api = el.getVideoData ? el.getVideoData() : null;
+      if (api && api.adBreak) return true;
+    } catch {}
     return false;
   }
 
@@ -53,37 +62,30 @@
     if (!el) return false;
     const button =
       el.querySelector('.ytp-skip-ad-button') ||
+      el.querySelector('.ytp-skip-ad-button-modern') ||
       el.querySelector('.ytp-ad-skip-button-modern') ||
-      el.querySelector('.ytp-ad-skip-button');
+      el.querySelector('.ytp-ad-skip-button') ||
+      el.querySelector('button.ytp-ad-skip-button');
     if (!button) return false;
     const now = Date.now();
     if (now - lastSkipAt < 500) return false;
     lastSkipAt = now;
+    try {
+      button.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      button.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+    } catch {}
     button.click();
     return true;
-  }
-
-  // A break can be skip-proof if the player never offers the button, so the video is also nudged
-  // towards its end. That is only safe while an ad is actually showing, which is checked first.
-  function nudgeToEnd(video) {
-    if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
-    const target = Math.max(0, video.duration - 0.1);
-    if (video.currentTime < target - 0.3) {
-      try {
-        video.currentTime = target;
-      } catch {
-        // A seek the browser refuses is not worth retrying.
-      }
-    }
   }
 
   function muteForAd(video) {
     if (!video || mutedByUs) return;
     savedMute = video.muted;
+    wasPausedBeforeAd = video.paused;
     video.muted = true;
     mutedByUs = true;
     muteStartedAt = Date.now();
-    if (video.paused) {
+    if (video.paused && !wasPausedBeforeAd) {
       const played = video.play();
       if (played && typeof played.catch === 'function') played.catch(() => {});
     }
@@ -92,7 +94,16 @@
   function unmuteAfterAd(video) {
     if (!mutedByUs) return;
     mutedByUs = false;
-    if (video) video.muted = savedMute;
+    if (video) {
+      video.muted = savedMute;
+      if (wasPausedBeforeAd) {
+        try { video.pause(); } catch {}
+      } else if (video.paused) {
+        const played = video.play();
+        if (played && typeof played.catch === 'function') played.catch(() => {});
+      }
+    }
+    wasPausedBeforeAd = false;
   }
 
   function setAttr(node, name, on) {
@@ -132,7 +143,6 @@
     const skipped = clickSkip();
     if (video) {
       if (settings.mute) muteForAd(video);
-      nudgeToEnd(video);
     }
     // The counter moves once when a break starts, not on every tick it lasts.
     if (!wasAdShowing) { wasAdShowing = true; report(); }
@@ -145,7 +155,12 @@
     const el = player() || document.body;
     if (!el) return;
     observer = new MutationObserver(() => {
-      if (isAdShowing()) tick();
+      // Coalesce YouTube's bursts of player DOM mutations into one check.
+      if (observerTimer !== null) return;
+      observerTimer = setTimeout(() => {
+        observerTimer = null;
+        tick();
+      }, 200);
     });
     observer.observe(el, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
   }

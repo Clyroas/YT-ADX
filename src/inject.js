@@ -40,11 +40,23 @@
     'feedNudgeRenderer',
     'mealbarPromoRenderer',
     'youThereRenderer',
+    'adBreaks',
+    'adBreaksRenderer',
+    'adBreak',
+    'adDuration',
+    'adCountdown',
+    'adPlayback',
+    'adOverlay',
+    'companionAd',
+    'midroll',
+    'adSlotsRenderer',
+    'playerAdBreak',
+    'adBreakHeartbeat',
   ];
 
   const AD_KEY_SET = new Set(AD_KEYS);
   // Cheap pre-check so the vast majority of responses are never parsed.
-  const MARKERS = ['"adPlacements"', '"adSlots"', '"playerAds"', '"adBreakHeartbeatParams"', '"promotedSparkles', '"displayAdRenderer"', '"adSlotRenderer"', '"inFeedAdLayoutRenderer"', '"primetimePromoRenderer"', '"statementBannerRenderer"', '"searchPyvRenderer"', '"brandVideoShelfRenderer"', '"mealbarPromoRenderer"', '"youThereRenderer"'];
+  const MARKERS = ['"adPlacements"', '"adSlots"', '"playerAds"', '"adBreakHeartbeatParams"', '"adBreaks"', '"adBreak"', '"adOverlay"', '"companionAd"', '"midroll"', '"promotedSparkles', '"displayAdRenderer"', '"adSlotRenderer"', '"inFeedAdLayoutRenderer"', '"primetimePromoRenderer"', '"statementBannerRenderer"', '"searchPyvRenderer"', '"brandVideoShelfRenderer"', '"mealbarPromoRenderer"', '"youThereRenderer"'];
   const MAX_DEPTH = 40;
 
     const COUNTED_KEYS = new Set([
@@ -78,11 +90,19 @@
         const item = node[i];
         if (item && typeof item === 'object') {
           const keys = Object.keys(item);
-          const isAdWrapper = keys.some((k) => AD_KEY_SET.has(k)) && keys.every((k) => AD_KEY_SET.has(k) || k === 'trackingParams');
-          if (isAdWrapper) {
-            if (stats && keys.some((k) => COUNTED_KEYS.has(k))) stats.count += 1;
-            node.splice(i, 1);
-            continue;
+          const hasAdKey = keys.some((k) => AD_KEY_SET.has(k));
+          if (hasAdKey) {
+            if (keys.length <= 4) {
+              if (stats && keys.some((k) => COUNTED_KEYS.has(k))) stats.count += 1;
+              node.splice(i, 1);
+              continue;
+            }
+            for (const k of keys) {
+              if (AD_KEY_SET.has(k)) {
+                if (stats && COUNTED_KEYS.has(k)) stats.count += 1;
+                delete item[k];
+              }
+            }
           }
         }
         stripAds(item, depth + 1, stats);
@@ -125,7 +145,7 @@
     window.fetch = function (input, init) {
       const url = typeof input === 'string' ? input : input && input.url ? input.url : '';
       const promise = nativeFetch.call(this, input, init);
-      if (!isEnabled() || url.indexOf('/youtubei/v1/') === -1) return promise;
+      if (!isEnabled() || (url.indexOf('/youtubei/v1/') === -1 && url.indexOf('youtube.com') === -1 && url.indexOf('youtubei') === -1 && url.indexOf('googlevideo.com') === -1)) return promise;
       return promise.then((response) => {
         let type = '';
         try {
@@ -189,7 +209,7 @@
   XMLHttpRequest.prototype.open = function (method, url) {
     try {
       const text = String(url);
-      if (text.indexOf('/youtubei/v1/') !== -1) patchXhrInstance(this);
+      if (text.indexOf('/youtubei/v1/') !== -1 || text.indexOf('youtube.com') !== -1 || text.indexOf('youtubei') !== -1 || text.indexOf('googlevideo.com') !== -1) patchXhrInstance(this);
     } catch {
       // A URL that cannot be read is one this script has nothing to do with.
     }
@@ -221,14 +241,32 @@
   defineStripped('ytInitialPlayerResponse', {
     get: () => playerValue,
     set: (value) => {
-      playerValue = isEnabled() && value && typeof value === 'object' ? stripRoot(value) : value;
+      if (!isEnabled()) { playerValue = value; return; }
+      if (value && typeof value === 'object') { playerValue = stripRoot(value); return; }
+      if (typeof value === 'string' && value.length >= 32) {
+        try {
+          const parsed = JSON.parse(value);
+          playerValue = JSON.stringify(stripRoot(parsed));
+          return;
+        } catch { playerValue = value; return; }
+      }
+      playerValue = value;
     },
   });
 
   defineStripped('ytInitialData', {
     get: () => dataValue,
     set: (value) => {
-      dataValue = isEnabled() && value && typeof value === 'object' ? stripRoot(value) : value;
+      if (!isEnabled()) { dataValue = value; return; }
+      if (value && typeof value === 'object') { dataValue = stripRoot(value); return; }
+      if (typeof value === 'string' && value.length >= 32) {
+        try {
+          const parsed = JSON.parse(value);
+          dataValue = JSON.stringify(stripRoot(parsed));
+          return;
+        } catch { dataValue = value; return; }
+      }
+      dataValue = value;
     },
   });
 

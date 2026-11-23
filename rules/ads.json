@@ -20,19 +20,6 @@
                       }
     },
     {
-        "id":  10,
-        "priority":  2,
-        "action":  {
-                       "type":  "block"
-                   },
-        "condition":  {
-                          "urlFilter":  "||youtube.com/api/stats/ads",
-                          "excludedResourceTypes":  [
-                                                        "main_frame"
-                                                    ]
-                      }
-    },
-    {
         "id":  11,
         "priority":  2,
         "action":  {
@@ -40,19 +27,6 @@
                    },
         "condition":  {
                           "urlFilter":  "||youtube.com/pagead/",
-                          "excludedResourceTypes":  [
-                                                        "main_frame"
-                                                    ]
-                      }
-    },
-    {
-        "id":  13,
-        "priority":  2,
-        "action":  {
-                       "type":  "block"
-                   },
-        "condition":  {
-                          "urlFilter":  "||youtube.com/get_midroll_info",
                           "excludedResourceTypes":  [
                                                         "main_frame"
                                                     ]
