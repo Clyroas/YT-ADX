@@ -26,13 +26,8 @@ html[data-ytadclean-hide="1"] ytm-companion-slot {
   display: none !important;
 }
 
-/* The "ad blockers violate the terms" modal. Hidden rather than removed so the dialog stack the
-   page keeps does not end up pointing at a node that is gone. */
-html[data-ytadclean-hide="1"] ytd-enforcement-message-view-model,
-html[data-ytadclean-hide="1"] ytd-enforcement-message-view-model + tp-yt-iron-overlay-backdrop,
-html[data-ytadclean-hide="1"]:has(ytd-enforcement-message-view-model) tp-yt-iron-overlay-backdrop {
-  display: none !important;
-}
+/* Keep YouTube's enforcement notice visible. Hiding it does not unlock the player; it leaves
+   playback blocked behind an unexplained black frame. */
 
 /* While a break is showing, hide its chrome so a skipped ad never flashes a control. */
 html[data-ytadclean-skip="1"] .ytp-ad-player-overlay,
@@ -42,4 +37,16 @@ html[data-ytadclean-skip="1"] .ytp-ad-player-overlay-layout,
 html[data-ytadclean-skip="1"] .ytp-ad-player-overlay-instream-info,
 html[data-ytadclean-skip="1"] .ytp-ad-skip-button-slot {
   display: none !important;
+}
+
+/* HUD overlay: fully rounded glass pill, never a box. This stylesheet rule backs up the
+   inline style in content.js so the pill stays rounded even if inline styles are stripped. */
+#ytadx-hud {
+  border-radius: 999px !important;
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06)) !important;
+  border: 1px solid rgba(255,255,255,0.22) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 6px 18px rgba(0,0,0,0.35) !important;
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
 }

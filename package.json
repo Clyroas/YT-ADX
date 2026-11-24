@@ -1,0 +1,10 @@
+{
+  "name": "yt-adx",
+  "version": "1.0.3",
+  "private": true,
+  "description": "MV3 extension that blocks YouTube ad endpoints, strips ad breaks from player responses, and clears ad surfaces.",
+  "scripts": {
+    "test": "node --test test/verify.js test/thorough.js",
+    "check": "node --check src/background.js && node --check src/content.js && node --check src/inject.js && node --check src/ui.js"
+  }
+}

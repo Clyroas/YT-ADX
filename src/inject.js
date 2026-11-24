@@ -59,21 +59,8 @@
   const MARKERS = ['"adPlacements"', '"adSlots"', '"playerAds"', '"adBreakHeartbeatParams"', '"adBreaks"', '"adBreak"', '"adOverlay"', '"companionAd"', '"midroll"', '"promotedSparkles', '"displayAdRenderer"', '"adSlotRenderer"', '"inFeedAdLayoutRenderer"', '"primetimePromoRenderer"', '"statementBannerRenderer"', '"searchPyvRenderer"', '"brandVideoShelfRenderer"', '"mealbarPromoRenderer"', '"youThereRenderer"'];
   const MAX_DEPTH = 40;
 
-    const COUNTED_KEYS = new Set([
-    'adPlacements', 'adSlots', 'playerAds', 'adBreakServiceRenderer',
-    'adSlotRenderer', 'promotedSparklesWebRenderer', 'promotedVideoRenderer',
-    'compactPromotedVideoRenderer', 'inFeedAdLayoutRenderer', 'displayAdRenderer',
-    'videoMastheadAdV3Renderer', 'mastheadAdV3Renderer', 'searchPyvRenderer'
-  ]);
-  function notifyStripped(removed) {
-    if (removed > 0) {
-      try { window.postMessage({ source: 'ytadclean-inject', count: removed }, '*'); } catch {}
-    }
-  }
-  function stripRoot(node) {
-    const stats = { count: 0 };
-    stripAds(node, 0, stats);
-    notifyStripped(stats.count);
+    function stripRoot(node) {
+    stripAds(node, 0);
     return node;
   }
   function mightHoldAd(text) {
@@ -83,7 +70,7 @@
 
   // Walks the tree in place. Objects are mutated, arrays are compacted, nothing is cloned, so the
   // page keeps the identity of the objects it already holds.
-  function stripAds(node, depth, stats) {
+  function stripAds(node, depth) {
     if (!node || typeof node !== 'object' || depth > MAX_DEPTH) return node;
     if (Array.isArray(node)) {
       for (let i = node.length - 1; i >= 0; i -= 1) {
@@ -93,29 +80,26 @@
           const hasAdKey = keys.some((k) => AD_KEY_SET.has(k));
           if (hasAdKey) {
             if (keys.length <= 4) {
-              if (stats && keys.some((k) => COUNTED_KEYS.has(k))) stats.count += 1;
               node.splice(i, 1);
               continue;
             }
             for (const k of keys) {
               if (AD_KEY_SET.has(k)) {
-                if (stats && COUNTED_KEYS.has(k)) stats.count += 1;
                 delete item[k];
               }
             }
           }
         }
-        stripAds(item, depth + 1, stats);
+        stripAds(item, depth + 1);
       }
       return node;
     }
     for (const key of Object.keys(node)) {
       if (AD_KEY_SET.has(key)) {
-        if (stats && COUNTED_KEYS.has(key)) stats.count += 1;
         delete node[key];
         continue;
       }
-      stripAds(node[key], depth + 1, stats);
+      stripAds(node[key], depth + 1);
     }
     return node;
   }
@@ -181,13 +165,20 @@
   const rawResponse = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'response');
 
   function patchXhrInstance(xhr) {
+    // Cache the stripped result per instance: these getters can be read many times,
+    // and re-stripping on every read would re-count the same removals each time.
+    let cachedText;
+    let cachedTextReady = false;
+    let cachedResponse;
+    let cachedResponseReady = false;
     if (rawText && rawText.get) {
       Object.defineProperty(xhr, 'responseText', {
         configurable: true,
         get() {
           const text = rawText.get.call(this);
           if (this.readyState !== 4) return text;
-          return stripText(text);
+          if (!cachedTextReady) { cachedText = stripText(text); cachedTextReady = true; }
+          return cachedText;
         },
       });
     }
@@ -197,9 +188,13 @@
         get() {
           const value = rawResponse.get.call(this);
           if (this.readyState !== 4 || !isEnabled()) return value;
-          if (typeof value === 'string') return stripText(value);
-          if (value && typeof value === 'object' && this.responseType === 'json') return stripRoot(value);
-          return value;
+          if (!cachedResponseReady) {
+            if (typeof value === 'string') cachedResponse = stripText(value);
+            else if (value && typeof value === 'object' && this.responseType === 'json') cachedResponse = stripRoot(value);
+            else cachedResponse = value;
+            cachedResponseReady = true;
+          }
+          return cachedResponse;
         },
       });
     }
@@ -270,5 +265,6 @@
     },
   });
 
-  window.DsxYtAdStrip = { stripAds, stripText };
+  // Debug handle only when explicitly requested, so the page cannot fingerprint the extension by its presence.
+  try { if (window.localStorage.getItem('ytadclean_debug') === '1') window.DsxYtAdStrip = { stripAds, stripText }; } catch {}
 })();

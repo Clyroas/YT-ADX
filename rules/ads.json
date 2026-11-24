@@ -1,74 +1,59 @@
 [
-    {
-        "id":  1,
-        "priority":  1,
-        "action":  {
-                       "type":  "block"
-                   },
-        "condition":  {
-                          "requestDomains":  [
-                                                 "doubleclick.net",
-                                                 "googlesyndication.com",
-                                                 "googleadservices.com",
-                                                 "2mdn.net",
-                                                 "googletagservices.com",
-                                                 "googletagmanager.com"
-                                             ],
-                          "excludedResourceTypes":  [
-                                                        "main_frame"
-                                                    ]
-                      }
-    },
-    {
-        "id":  11,
-        "priority":  2,
-        "action":  {
-                       "type":  "block"
-                   },
-        "condition":  {
-                          "urlFilter":  "||youtube.com/pagead/",
-                          "excludedResourceTypes":  [
-                                                        "main_frame"
-                                                    ]
-                      }
-    },
-    {
-        "id":  16,
-        "priority":  2,
-        "action":  {
-                       "type":  "block"
-                   },
-        "condition":  {
-                          "urlFilter":  "||youtube.com/pagead/lvz",
-                          "excludedResourceTypes":  [
-                                                        "main_frame"
-                                                    ]
-                      }
-    },
-    {
-        "id":  17,
-        "priority":  2,
-        "action":  {
-                       "type":  "block"
-                   },
-        "condition":  {
-                          "urlFilter":  "||google.com/pagead/",
-                          "excludedResourceTypes":  [
-                                                        "main_frame"
-                                                    ]
-                      }
-    },
-    {
-        "id":  18,
-        "priority":  2,
-        "action":  {
-                       "type":  "block"
-                   },
-        "condition":  {
-                          "urlFilter":  "||google.com.my/pagead/",
-                          "excludedResourceTypes":  [
-                                                        "main_frame"
-                                                    ]
-                      }
+  {
+    "id": 1,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "requestDomains": [
+        "doubleclick.net",
+        "googlesyndication.com",
+        "googleadservices.com",
+        "2mdn.net",
+        "googletagservices.com",
+        "googletagmanager.com"
+      ],
+      "initiatorDomains": ["youtube.com"],
+      "excludedResourceTypes": ["main_frame"]
     }
+  },
+  {
+    "id": 11,
+    "priority": 2,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||youtube.com/pagead/",
+      "initiatorDomains": ["youtube.com"],
+      "excludedResourceTypes": ["main_frame"]
+    }
+  },
+  {
+    "id": 16,
+    "priority": 2,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||youtube.com/pagead/lvz",
+      "initiatorDomains": ["youtube.com"],
+      "excludedResourceTypes": ["main_frame"]
+    }
+  },
+  {
+    "id": 17,
+    "priority": 2,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||google.com/pagead/",
+      "initiatorDomains": ["youtube.com"],
+      "excludedResourceTypes": ["main_frame"]
+    }
+  },
+  {
+    "id": 18,
+    "priority": 2,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||google.com.my/pagead/",
+      "initiatorDomains": ["youtube.com"],
+      "excludedResourceTypes": ["main_frame"]
+    }
+  }
 ]

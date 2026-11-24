@@ -1,5 +1,10 @@
-﻿_metadata/
+_metadata/
 test/server.log
 test/last-run.txt
+test/cert.pem
+test/media.wav
+test/bench.png
+node_modules/
+*.zip
 .DS_Store
 Thumbs.db
