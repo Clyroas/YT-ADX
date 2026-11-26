@@ -14,15 +14,8 @@
   // A break is never held silent past its plausible length: past this the ad is left alone rather
   // than fought, so a misread player state cannot park a video in silence indefinitely.
   const AD_PLAY_LIMIT_MS = 45000;
-  // One counter bump per break, not one per tick.
-  const REPORT_GAP_MS = 3000;
-  // Anything shorter is the player flickering, not a break worth telling anyone about.
-  const MIN_REPORTABLE_MS = 250;
-  // The data layer runs before the player boots, so its report always wins the race.
-  const STRIP_DEDUPE_MS = 2000;
-
   // Keep in sync with DEFAULTS in src/background.js and src/ui.js (no shared module in MV3 plain scripts).
-  const DEFAULTS = { enabled: true, skip: true, mute: true, hide: true, count: true };
+  const DEFAULTS = { enabled: true, skip: true, mute: true, hide: true };
   let wasAdShowing = false;
   function syncEnabledFlag() { try { window.localStorage.setItem('ytadclean_enabled', settings.enabled === false ? '0' : '1'); } catch {} }
 
@@ -37,9 +30,9 @@
   let userPausedBeforeAd = false;
   let muteStartedAt = 0;
   let lastSkipAt = 0;
-  let lastReportAt = 0;
-  let lastStripAt = 0;
-  let suppressOwnReport = false;
+
+
+
 
   // #movie_player only exists on the watch page. Embeds and Shorts render the same player element
   // without that wrapper, so the class is the fallback — both carry ad-showing / ad-interrupting.
@@ -132,13 +125,6 @@
   }
 
   function endBreak(video) {
-    if (adStartTs && wasAdShowing) {
-      const elapsed = Date.now() - adStartTs;
-      // The data layer already counted this break if it reported one within the last two seconds:
-      // one event per break, from whichever layer saw it first.
-      if (!suppressOwnReport && elapsed > MIN_REPORTABLE_MS) report(elapsed);
-      suppressOwnReport = false;
-    }
     wasAdShowing = false;
     adStartTs = 0;
     userPausedBeforeAd = false;
@@ -153,48 +139,8 @@
     else node.removeAttribute(name);
   }
 
-  function send(payload) {
-    try {
-      chrome.runtime.sendMessage(payload, (response) => {
-        void chrome.runtime.lastError;
-        if (response && response.stats) showHud(response.stats);
-      });
-    } catch {
-      // The extension was reloaded and this script is orphaned. Nothing to report to.
-    }
-  }
-
-  function report(seconds) {
-    const kind = mutedByUs ? 'muted' : 'skipped';
-    send({ type: 'ad-event', kind, seconds: Math.round(seconds / 1000) });
-    lastReportAt = Date.now();
-  }
-
-  // The action bar is the only surface the viewer is already looking at, so the running total lives
-  // there rather than on a toolbar badge a page action cannot paint in MV3.
-  function showHud(stats) {
-    if (!settings.count) return;
-    const bar = document.querySelector('ytd-topbar-menu-button-renderer, #end');
-    if (!bar) return;
-    let hud = document.getElementById('ytadx-hud');
-    if (!hud) {
-      hud = document.createElement('span');
-      hud.id = 'ytadx-hud';
-      hud.setAttribute('style', 'align-self:center;margin:0 12px;padding:5px 11px;border-radius:999px;'
-        + 'font:600 12px/1.2 system-ui,sans-serif;color:#f3f4f6;white-space:nowrap;pointer-events:none;'
-        + 'background:linear-gradient(160deg,rgba(255,255,255,0.16),rgba(255,255,255,0.06));'
-        + 'border:1px solid rgba(255,255,255,0.22);box-shadow:inset 0 1px 0 rgba(255,255,255,0.18),0 6px 18px rgba(0,0,0,0.35);'
-        + 'backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%);transition:opacity .3s ease');
-      bar.insertBefore(hud, bar.firstChild);
-    }
-    const s = Number(stats && stats.creditedSeconds) || 0;
-    const human = s < 60 ? s + 's' : (s < 3600 ? Math.floor(s / 60) + 'm' : Math.floor(s / 3600) + 'h ' + Math.floor(s % 3600 / 60) + 'm');
-    hud.textContent = (Number(stats && stats.blocked) || 0) + ' removed · ' + human + ' back';
-    clearTimeout(showHud.timer);
-    showHud.timer = setTimeout(() => { if (hud) hud.remove(); }, 5000);
-  }
-
   function tick() {
+
     const video = activeVideo();
 
     // The condition is one thing; skip, mute and seek are three separate decisions. Gating the
@@ -211,10 +157,10 @@
     if (!wasAdShowing) {
       wasAdShowing = true;
       adStartTs = Date.now();
-      suppressOwnReport = Date.now() - lastStripAt < STRIP_DEDUPE_MS;
+
       // Pausing at a break is the viewer saying "stop", not "play this for me".
       userPausedBeforeAd = video ? video.paused : false;
-      if (!suppressOwnReport) report(0);
+
     }
 
     // Silence is independent of skipping: an unskippable break is exactly the case where it pays.
@@ -266,9 +212,6 @@
   });
 
   document.addEventListener('yt-page-data-updated', watchPlayer);
-  // Page-world messages are forgeable by YouTube/page scripts, so never use them
-  // as trusted input for extension counters or player-state decisions.
-
   try {
     chrome.storage.local.get(DEFAULTS, (stored) => {
       settings = { ...DEFAULTS, ...stored };
