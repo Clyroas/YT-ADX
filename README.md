@@ -1,3 +1,5 @@
+<p align="center"><img src="brand/cutmark-banner.svg" alt="YT-ADX — Cutmark identity" width="720"></p>
+
 # YT-ADX
 An MV3 extension that removes YouTube's ad breaks and ad surfaces. Zero dependencies, no build step, no remote code.
 ## Layers
